@@ -105,7 +105,7 @@ function MetaCard({
 
 function ArtistList({ artists }: { artists: Artist[] }) {
   if (!artists.length) {
-    return <p className="text-sm text-muted-foreground">No artist data yet.</p>;
+    return <p className="text-sm text-muted-foreground">No listening activity this week.</p>;
   }
 
   return (
@@ -133,7 +133,7 @@ function ArtistList({ artists }: { artists: Artist[] }) {
 
 function AlbumList({ albums }: { albums: Album[] }) {
   if (!albums.length) {
-    return <p className="text-sm text-muted-foreground">No album data yet.</p>;
+    return <p className="text-sm text-muted-foreground">No listening activity this week.</p>;
   }
 
   return (
@@ -251,7 +251,13 @@ export function ListeningPanel() {
         </p>
       </div>
 
-      {current ? <TrackRow track={current} featured /> : null}
+      {current ? (
+        <TrackRow track={current} featured />
+      ) : (
+        <div className="surface-line rounded-[1.5rem] border border-white/10 bg-black/45 p-5 sm:p-6">
+          <p className="text-sm text-muted-foreground">No listening activity this week.</p>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <MetaCard title="Top Artists">
@@ -276,7 +282,14 @@ export function ListeningPanel() {
             ))}
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="space-y-3">
+          <p className="font-mono text-xs uppercase tracking-[0.28em] text-muted-foreground">
+            Recent Tracks
+          </p>
+          <p className="text-sm text-muted-foreground">No listening activity this week.</p>
+        </div>
+      )}
     </div>
   );
 }

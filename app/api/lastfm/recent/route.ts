@@ -5,6 +5,9 @@ const LASTFM_ENDPOINT = "https://ws.audioscrobbler.com/2.0/";
 // LASTFM_API_KEY
 // LASTFM_USERNAME
 export const dynamic = "force-dynamic";
+const TOP_LIST_LIMIT = 5;
+const RECENT_TRACK_LIMIT = 20;
+const SEVEN_DAYS_IN_SECONDS = 7 * 24 * 60 * 60;
 
 type LastFmImage = {
   "#text": string;
@@ -43,6 +46,16 @@ type LastFmAlbum = {
   image?: LastFmImage[];
 };
 
+type NormalizedTrack = {
+  name: string;
+  artist: string;
+  album: string | null;
+  image: string | null;
+  nowPlaying: boolean;
+  playedAt: string | null;
+  playedAtUts: number | null;
+};
+
 function getAlbumArt(images?: LastFmImage[]) {
   return [...(images ?? [])].reverse().find((image) => image["#text"])?.["#text"] ?? null;
 }
@@ -53,6 +66,20 @@ function asArray<T>(value: T | T[] | null | undefined) {
   }
 
   return Array.isArray(value) ? value : [value];
+}
+
+function normalizeTrack(track: LastFmTrack): NormalizedTrack {
+  const playedAtUts = Number(track.date?.uts);
+
+  return {
+    name: track.name,
+    artist: track.artist?.["#text"] ?? "Unknown artist",
+    album: track.album?.["#text"] || null,
+    image: getAlbumArt(track.image),
+    nowPlaying: track["@attr"]?.nowplaying === "true",
+    playedAt: track.date?.["#text"] ?? null,
+    playedAtUts: Number.isFinite(playedAtUts) ? playedAtUts : null,
+  };
 }
 
 export async function GET() {
@@ -78,21 +105,21 @@ export async function GET() {
   const recentParams = new URLSearchParams({
     ...baseParams,
     method: "user.getrecenttracks",
-    limit: "5",
+    limit: String(RECENT_TRACK_LIMIT),
   });
 
   const topArtistsParams = new URLSearchParams({
     ...baseParams,
     method: "user.gettopartists",
-    period: "1month",
-    limit: "5",
+    period: "7day",
+    limit: String(TOP_LIST_LIMIT),
   });
 
   const topAlbumsParams = new URLSearchParams({
     ...baseParams,
     method: "user.gettopalbums",
-    period: "1month",
-    limit: "5",
+    period: "7day",
+    limit: String(TOP_LIST_LIMIT),
   });
 
   try {
@@ -118,14 +145,18 @@ export async function GET() {
         Boolean(track && typeof track.name === "string" && track.name.trim()),
     );
 
-    const normalizedTracks = tracks.map((track) => ({
-      name: track.name,
-      artist: track.artist?.["#text"] ?? "Unknown artist",
-      album: track.album?.["#text"] || null,
-      image: getAlbumArt(track.image),
-      nowPlaying: track["@attr"]?.nowplaying === "true",
-      playedAt: track.date?.["#text"] ?? null,
-    }));
+    const normalizedTracks = tracks.map(normalizeTrack);
+    const weekAgoUts = Math.floor(Date.now() / 1000) - SEVEN_DAYS_IN_SECONDS;
+    const weeklyTracks = normalizedTracks.filter(
+      (track) => track.nowPlaying || (track.playedAtUts !== null && track.playedAtUts >= weekAgoUts),
+    );
+    const currentTrack =
+      normalizedTracks.find((track) => track.nowPlaying) ??
+      weeklyTracks.find((track) => !track.nowPlaying) ??
+      null;
+    const orderedTracks = currentTrack
+      ? [currentTrack, ...weeklyTracks.filter((track) => track !== currentTrack)]
+      : weeklyTracks;
 
     const rawArtists = asArray(topArtistsData?.topartists?.artist);
     const topArtists = rawArtists
@@ -136,7 +167,8 @@ export async function GET() {
       .map((artist: LastFmArtist) => ({
         name: artist.name,
         playcount: artist.playcount ?? null,
-      }));
+      }))
+      .slice(0, TOP_LIST_LIMIT);
 
     const rawAlbums = asArray(topAlbumsData?.topalbums?.album);
     const topAlbums = rawAlbums
@@ -149,13 +181,14 @@ export async function GET() {
         artist: album.artist?.name ?? "Unknown artist",
         playcount: album.playcount ?? null,
         image: getAlbumArt(album.image),
-      }));
+      }))
+      .slice(0, TOP_LIST_LIMIT);
 
     return NextResponse.json({
       ok: true,
       username,
-      current: normalizedTracks[0] ?? null,
-      tracks: normalizedTracks,
+      current: currentTrack,
+      tracks: orderedTracks,
       topArtists,
       topAlbums,
     });
