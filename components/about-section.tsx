@@ -26,11 +26,11 @@ export function AboutSection() {
               <p className="font-mono text-xs uppercase tracking-[0.28em] text-foreground/80">
                 Core Skills
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-x-2 gap-y-2">
                 {[
-                  ...skills.languages.slice(0, 4),
-                  ...skills.frameworks.slice(0, 4),
-                  ...skills.tools.slice(0, 4),
+                  ...skills.languages,
+                  ...skills.frameworks,
+                  ...skills.tools,
                 ].map((skill) => (
                   <Badge key={skill}>{skill}</Badge>
                 ))}

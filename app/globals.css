@@ -91,6 +91,15 @@
       0 0 24px rgba(120, 186, 255, 0.18);
   }
 
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .surface-line {
     position: relative;
   }
