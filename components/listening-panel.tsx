@@ -193,7 +193,7 @@ export function ListeningPanel() {
             loading: false,
             data: {
               ok: false,
-              error: "Unable to load listening activity right now.",
+              error: "Unable to load music right now.",
             },
           });
         }

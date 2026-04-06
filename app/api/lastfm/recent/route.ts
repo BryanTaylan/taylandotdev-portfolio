@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 const LASTFM_ENDPOINT = "https://ws.audioscrobbler.com/2.0/";
+// Requires these server-side environment variables in Vercel:
+// LASTFM_API_KEY
+// LASTFM_USERNAME
+export const dynamic = "force-dynamic";
 
 type LastFmImage = {
   "#text": string;
@@ -41,6 +45,14 @@ type LastFmAlbum = {
 
 function getAlbumArt(images?: LastFmImage[]) {
   return [...(images ?? [])].reverse().find((image) => image["#text"])?.["#text"] ?? null;
+}
+
+function asArray<T>(value: T | T[] | null | undefined) {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
 }
 
 export async function GET() {
@@ -100,8 +112,11 @@ export async function GET() {
       topAlbumsResponse.json(),
     ]);
 
-    const rawTracks = recentData?.recenttracks?.track;
-    const tracks = (Array.isArray(rawTracks) ? rawTracks : [rawTracks]).filter(Boolean) as LastFmTrack[];
+    const rawTracks = asArray(recentData?.recenttracks?.track);
+    const tracks = rawTracks.filter(
+      (track): track is LastFmTrack =>
+        Boolean(track && typeof track.name === "string" && track.name.trim()),
+    );
 
     const normalizedTracks = tracks.map((track) => ({
       name: track.name,
@@ -112,17 +127,23 @@ export async function GET() {
       playedAt: track.date?.["#text"] ?? null,
     }));
 
-    const rawArtists = topArtistsData?.topartists?.artist;
-    const topArtists = (Array.isArray(rawArtists) ? rawArtists : [rawArtists])
-      .filter(Boolean)
+    const rawArtists = asArray(topArtistsData?.topartists?.artist);
+    const topArtists = rawArtists
+      .filter(
+        (artist): artist is LastFmArtist =>
+          Boolean(artist && typeof artist.name === "string" && artist.name.trim()),
+      )
       .map((artist: LastFmArtist) => ({
         name: artist.name,
         playcount: artist.playcount ?? null,
       }));
 
-    const rawAlbums = topAlbumsData?.topalbums?.album;
-    const topAlbums = (Array.isArray(rawAlbums) ? rawAlbums : [rawAlbums])
-      .filter(Boolean)
+    const rawAlbums = asArray(topAlbumsData?.topalbums?.album);
+    const topAlbums = rawAlbums
+      .filter(
+        (album): album is LastFmAlbum =>
+          Boolean(album && typeof album.name === "string" && album.name.trim()),
+      )
       .map((album: LastFmAlbum) => ({
         name: album.name,
         artist: album.artist?.name ?? "Unknown artist",
@@ -139,10 +160,12 @@ export async function GET() {
       topAlbums,
     });
   } catch (error) {
+    console.error("Last.fm route failed", error);
+
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Unable to load listening activity.",
+        error: "Unable to load music right now.",
       },
       { status: 200 },
     );
