@@ -10,9 +10,7 @@ export function ExperienceSection() {
           delay={index * 0.08}
         >
           <div className="grid gap-5 rounded-[1.75rem] border border-white/8 bg-card/40 p-5 backdrop-blur md:grid-cols-[190px_minmax(0,0.85fr)_minmax(0,1.15fr)] md:items-start md:p-6">
-            <div className="relative pl-8 md:pl-0">
-              <div className="absolute left-0 top-1.5 h-full w-px bg-white/12 md:-left-7" />
-              <div className="absolute left-[-6px] top-1.5 size-3 rounded-full border border-white/16 bg-background md:-left-[34px]" />
+            <div>
               <p className="font-mono text-xs uppercase tracking-[0.22em] text-foreground/80">
                 {item.period}
               </p>

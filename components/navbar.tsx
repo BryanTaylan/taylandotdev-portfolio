@@ -29,7 +29,7 @@ export function Navbar() {
   }, [pathname]);
 
   const content = (
-    <div className="container pt-4">
+    <div className="container pt-2 sm:pt-3">
       <div className="mx-auto max-w-[52rem]">
         <div className="surface-line rounded-[1.8rem] border border-white/10 bg-background/72 px-5 py-3.5 backdrop-blur-2xl sm:px-6">
           <div className="flex items-center justify-between gap-4">

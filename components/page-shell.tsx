@@ -9,7 +9,7 @@ export function PageShell({ children }: { children: ReactNode }) {
     <div className="relative min-h-screen overflow-x-clip">
       <BeamsBackground />
       <Navbar />
-      <main className="relative z-10 pt-28 sm:pt-32">{children}</main>
+      <main className="relative z-10 pt-24 sm:pt-28">{children}</main>
       <div className="relative z-10">
         <Footer />
       </div>
